@@ -1,0 +1,44 @@
+services:
+  # Web API Service
+  - type: web
+    name: client-portal-api
+    env: docker
+    buildCommand: ""
+    startCommand: ""
+    dockerfilePath: ./Dockerfile
+    disk:
+      name: uploads-disk
+      mountPath: /app/uploads
+      sizeGB: 1
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DOTNET_RUNNING_IN_CONTAINER
+        value: true
+      # aqui puedes agregar más variables de entorno si las necesitas
+      # - key: FRONTEND_URL
+      #   value: https://your-frontend-app.onrender.com
+
+  # =====================================================
+  # SERVICIO DE BASE DE DATOS POSTGRESQL
+  # =====================================================
+  # Por ahora comentado porque estamos usando memoria
+  # Descomenta esto cuando quieras usar PostgreSQL de verdad
+
+  # Servicio de base de datos PostgreSQL
+  # - type: pserv
+  #   name: client-portal-db
+  #   env: postgresql
+  #   databaseName: clientportal_prod
+  #   user: clientportal_user
+  #   password: ${DB_PASSWORD}
+  #   ipAllowList: []  # Solo accesible por otros servicios del proyecto
+
+  # =====================================================
+  # SERVICIO DE REDIS (OPCIONAL - PARA CACHE)
+  # =====================================================
+  # Descomenta si necesitas Redis para guardar cosas en cache
+
+  # - type: redis
+  #   name: client-portal-redis
+  #   ipAllowList: []  # Solo accesible por otros servicios del proyecto
