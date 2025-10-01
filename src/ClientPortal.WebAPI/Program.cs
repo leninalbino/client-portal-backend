@@ -5,6 +5,9 @@ using ClientPortal.Infrastructure.Repositories;
 using ClientPortal.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using ClientPortal.Domain.Entities;
+using HealthChecks.NpgSql;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,43 +15,61 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Configure In-Memory Database for simplicity (for development/testing)
-// TODO: Replace with PostgreSQL for production
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseInMemoryDatabase("ClientPortalDb"));
-
 // =====================================================
-// CONFIGURACION POSTGRESQL (PARA CUANDO QUIERAS USARLA)
+// CONFIGURACION BASE DE DATOS
 // =====================================================
-// Cuando quieras cambiar a PostgreSQL, descomenta esta parte
-// y comenta la configuración de memoria de arriba
-
-// Agregar soporte para PostgreSQL
-/*
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    // 1. Primero intenta leer de variable de entorno (ej: Render)
+    var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+    // 2. Si no existe, intenta de appsettings.json (local)
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    }
 
     if (string.IsNullOrEmpty(connectionString))
     {
-        // Si no hay conexión, usar memoria como respaldo
+        // Si no hay nada, usa InMemory como respaldo (dev/testing)
         options.UseInMemoryDatabase("ClientPortalDb");
         Console.WriteLine("⚠️ Usando base de datos en memoria - no se encontró cadena de conexión");
     }
     else
     {
-        // Usar PostgreSQL para producción
-        options.UseNpgsql(connectionString);
-        Console.WriteLine("✅ Base de datos PostgreSQL conectada correctamente");
+        try
+        {
+            // Intenta configurar PostgreSQL
+            options.UseNpgsql(connectionString);
+
+            // Intenta crear una conexión de prueba para verificar que funciona
+            using var testConnection = new NpgsqlConnection(connectionString);
+            testConnection.Open();
+
+            Console.WriteLine("✅ Base de datos PostgreSQL conectada correctamente");
+        }
+        catch (Exception ex)
+        {
+            // Si falla la conexión, usa InMemory como respaldo
+            Console.WriteLine($"❌ Error conectando a PostgreSQL: {ex.Message}");
+            Console.WriteLine("🔄 Usando base de datos en memoria como respaldo");
+
+            options.UseInMemoryDatabase("ClientPortalDb");
+        }
     }
 });
 
-// Agregar health checks para monitorear la conexión a PostgreSQL
+// =====================================================
+// HEALTH CHECKS (para monitoreo en prod)
+// =====================================================
 builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection") ?? "",
-               name: "postgresql",
-               failureStatus: HealthStatus.Unhealthy);
-*/
+    .AddNpgSql(
+        Environment.GetEnvironmentVariable("DATABASE_URL") 
+        ?? builder.Configuration.GetConnectionString("DefaultConnection") 
+        ?? "",
+        name: "postgresql",
+        failureStatus: HealthStatus.Unhealthy
+    );
 
 // =====================================================
 // FIN CONFIGURACION POSTGRESQL
@@ -105,7 +126,7 @@ using (var scope = app.Services.CreateScope())
             Id = Guid.NewGuid(),
             FirstName = "Juan",
             LastName = "Pérez",
-            DateOfBirth = new DateTime(1990, 5, 15),
+            DateOfBirth = new DateTime(1990, 5, 15, 0, 0, 0, DateTimeKind.Utc),
             DocumentType = DocumentType.DNI,
             DocumentNumber = "12345678",
             CurriculumVitaeFileName = "cv_test.pdf",
