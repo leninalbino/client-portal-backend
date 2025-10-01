@@ -98,13 +98,29 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
     {
-        var allowedOrigins = new List<string> { "http://localhost:3000" };
+        var allowedOrigins = new List<string> 
+        { 
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "https://client-portal-devs.vercel.app"  // Tu frontend en Vercel
+        };
+
+        // Debug: Show all environment variables
+        Console.WriteLine("🔍 CORS Debug - Variables de entorno disponibles:");
+        Console.WriteLine($"   FRONTEND_URL: {Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "NO DEFINIDA"}");
+        Console.WriteLine($"   RENDER_EXTERNAL_URL: {Environment.GetEnvironmentVariable("RENDER_EXTERNAL_URL") ?? "NO DEFINIDA"}");
+        Console.WriteLine($"   ASPNETCORE_ENVIRONMENT: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "NO DEFINIDA"}");
 
         // Add production frontend URL if environment variable is set
         var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
         if (!string.IsNullOrEmpty(frontendUrl))
         {
             allowedOrigins.Add(frontendUrl);
+            Console.WriteLine($"✅ CORS: Agregando origen permitido desde FRONTEND_URL: {frontendUrl}");
+        }
+        else
+        {
+            Console.WriteLine("⚠️ CORS: Variable FRONTEND_URL no definida");
         }
 
         // For Render deployment, also allow the Render domain
@@ -112,12 +128,33 @@ builder.Services.AddCors(options =>
         if (!string.IsNullOrEmpty(renderUrl))
         {
             allowedOrigins.Add(renderUrl);
+            Console.WriteLine($"✅ CORS: Agregando origen permitido desde RENDER_EXTERNAL_URL: {renderUrl}");
         }
+
+        // Add any additional origins from environment variable (comma-separated)
+        var additionalOrigins = Environment.GetEnvironmentVariable("ADDITIONAL_CORS_ORIGINS");
+        if (!string.IsNullOrEmpty(additionalOrigins))
+        {
+            var origins = additionalOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var origin in origins)
+            {
+                var trimmedOrigin = origin.Trim();
+                if (!allowedOrigins.Contains(trimmedOrigin))
+                {
+                    allowedOrigins.Add(trimmedOrigin);
+                    Console.WriteLine($"✅ CORS: Agregando origen adicional: {trimmedOrigin}");
+                }
+            }
+        }
+
+        Console.WriteLine($"🔒 CORS: Orígenes permitidos: {string.Join(", ", allowedOrigins)}");
 
         policy.WithOrigins(allowedOrigins.ToArray())
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
+
+        Console.WriteLine($"🚀 CORS: Política 'AllowReact' configurada con {allowedOrigins.Count} orígenes");
     });
 });
 
