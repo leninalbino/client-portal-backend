@@ -34,27 +34,40 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         // Si no hay nada, usa InMemory como respaldo (dev/testing)
         options.UseInMemoryDatabase("ClientPortalDb");
         Console.WriteLine("⚠️ Usando base de datos en memoria - no se encontró cadena de conexión");
+        Console.WriteLine($"   Variable de entorno DATABASE_URL: {(Environment.GetEnvironmentVariable("DATABASE_URL") ?? "NO DEFINIDA")}");
     }
     else
     {
-        try
+        // Validar formato básico de la cadena de conexión
+        if (!connectionString.StartsWith("Host=") && !connectionString.StartsWith("Server=") && !connectionString.Contains("postgresql://"))
         {
-            // Intenta configurar PostgreSQL
-            options.UseNpgsql(connectionString);
-
-            // Intenta crear una conexión de prueba para verificar que funciona
-            using var testConnection = new NpgsqlConnection(connectionString);
-            testConnection.Open();
-
-            Console.WriteLine("✅ Base de datos PostgreSQL conectada correctamente");
-        }
-        catch (Exception ex)
-        {
-            // Si falla la conexión, usa InMemory como respaldo
-            Console.WriteLine($"❌ Error conectando a PostgreSQL: {ex.Message}");
+            Console.WriteLine($"❌ Error: La cadena de conexión no tiene el formato correcto: {connectionString.Substring(0, Math.Min(50, connectionString.Length))}...");
             Console.WriteLine("🔄 Usando base de datos en memoria como respaldo");
-
             options.UseInMemoryDatabase("ClientPortalDb");
+        }
+        else
+        {
+            try
+            {
+                // Intenta configurar PostgreSQL
+                options.UseNpgsql(connectionString);
+
+                // Intenta crear una conexión de prueba para verificar que funciona
+                using var testConnection = new NpgsqlConnection(connectionString);
+                testConnection.Open();
+
+                Console.WriteLine("✅ Base de datos PostgreSQL conectada correctamente");
+                Console.WriteLine($"   Cadena de conexión: {connectionString.Substring(0, Math.Min(60, connectionString.Length))}...");
+            }
+            catch (Exception ex)
+            {
+                // Si falla la conexión, usa InMemory como respaldo
+                Console.WriteLine($"❌ Error conectando a PostgreSQL: {ex.Message}");
+                Console.WriteLine($"   Cadena de conexión utilizada: {connectionString.Substring(0, Math.Min(60, connectionString.Length))}...");
+                Console.WriteLine("🔄 Usando base de datos en memoria como respaldo");
+
+                options.UseInMemoryDatabase("ClientPortalDb");
+            }
         }
     }
 });

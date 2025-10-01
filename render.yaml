@@ -18,21 +18,26 @@ services:
       # aqui puedes agregar más variables de entorno si las necesitas
       - key: FRONTEND_URL
         value: https://client-portal-devs.vercel.app
+      # Variables de entorno para PostgreSQL
+      - key: DB_NAME
+        value: clientportal_prod
+      - key: DB_USER
+        value: clientportal_user
+      - key: DB_PASSWORD
+        generateValue: true
 
   # =====================================================
   # SERVICIO DE BASE DE DATOS POSTGRESQL
   # =====================================================
-  # Por ahora comentado porque estamos usando memoria
-  # Descomenta esto cuando quieras usar PostgreSQL de verdad
 
   # Servicio de base de datos PostgreSQL
-  # - type: pserv
-  #   name: client-portal-db
-  #   env: postgresql
-  #   databaseName: clientportal_prod
-  #   user: clientportal_user
-  #   password: ${DB_PASSWORD}
-  #   ipAllowList: []  # Solo accesible por otros servicios del proyecto
+  - type: pserv
+    name: client-portal-db
+    env: postgresql
+    databaseName: ${DB_NAME}
+    user: ${DB_USER}
+    password: ${DB_PASSWORD}
+    ipAllowList: []  # Solo accesible por otros servicios del proyecto
 
   # =====================================================
   # SERVICIO DE REDIS (OPCIONAL - PARA CACHE)
