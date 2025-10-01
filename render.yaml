@@ -16,8 +16,8 @@ services:
       - key: DOTNET_RUNNING_IN_CONTAINER
         value: true
       # aqui puedes agregar más variables de entorno si las necesitas
-      # - key: FRONTEND_URL
-      #   value: https://your-frontend-app.onrender.com
+      - key: FRONTEND_URL
+        value: https://client-portal-devs.vercel.app
 
   # =====================================================
   # SERVICIO DE BASE DE DATOS POSTGRESQL
