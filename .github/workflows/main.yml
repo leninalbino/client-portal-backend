@@ -29,8 +29,11 @@ jobs:
 
       - name: Deploy to Render
         run: |
-          curl -X POST \
-          -H "Accept: application/json" \
-          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-          -d '{}' \
-          https://api.render.com/v1/services/srv-d3ejvavfte5s73cl3kn0/deploys
+          echo "🚀 Disparando deploy a Render..."
+          RESPONSE=$(curl -s -X POST \
+            -H "Accept: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -d '{}' \
+            https://api.render.com/v1/services/srv-d3ejvavfte5s73cl3kn0/deploys)
+          echo "Respuesta de Render:"
+          echo "$RESPONSE"
